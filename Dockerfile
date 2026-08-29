@@ -1,14 +1,26 @@
-FROM python:3.12-slim
+# --- Build stage ---
+FROM golang:1.22-alpine AS builder
 
-RUN groupadd -r dptrb && useradd -r -g dptrb dptrb
+WORKDIR /src
+
+RUN apk add --no-cache git
+
+COPY go.mod ./
+RUN go mod download 2>/dev/null || true
+
+COPY . .
+RUN go mod tidy && \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /out/routing-engine .
+
+# --- Runtime stage ---
+FROM alpine:3.19
+
+RUN apk add --no-cache ca-certificates && \
+    addgroup -S dptrb && adduser -S dptrb -G dptrb
 
 WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY ingestion_service.py .
+COPY --from=builder /out/routing-engine /app/routing-engine
 
 USER dptrb
 
-ENTRYPOINT ["python", "ingestion_service.py"]
+ENTRYPOINT ["/app/routing-engine"]
