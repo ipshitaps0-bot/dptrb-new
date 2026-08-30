@@ -12,6 +12,44 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Prepare DPTRB project structure
+        run: |
+          mkdir -p services/routing
+          mkdir -p services/ingestion
+          mkdir -p db
+
+          # Go routing engine
+          cp Dockerfile services/routing/Dockerfile
+          cp go.mod services/routing/go.mod
+          cp *.go services/routing/
+
+          # Python ingestion service
+          cp ingestion_service.py services/ingestion/
+          cp requirements.txt services/ingestion/
+
+          cat > services/ingestion/Dockerfile <<'EOF'
+          FROM python:3.12-slim
+
+          RUN groupadd -r dptrb && useradd -r -g dptrb dptrb
+
+          WORKDIR /app
+
+          COPY requirements.txt .
+          RUN pip install --no-cache-dir -r requirements.txt
+
+          COPY ingestion_service.py .
+
+          USER dptrb
+
+          ENTRYPOINT ["python", "ingestion_service.py"]
+          EOF
+
+          # Database initialization
+          cp init.sql db/
+
+          echo "Prepared project structure:"
+          find . -maxdepth 3 -type f | sort
+
       - name: Check Docker
         run: |
           docker --version
