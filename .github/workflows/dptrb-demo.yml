@@ -98,6 +98,40 @@ jobs:
         run: |
           docker compose logs --no-color --tail=200 || true
 
+      - name: Inspect Kafka topics
+        run: |
+          echo "===== KAFKA TOPICS ====="
+          docker exec dptrb-kafka kafka-topics \
+            --bootstrap-server localhost:9092 \
+            --list || true
+
+          echo ""
+          echo "===== RIDERSHIP RAW EVENTS ====="
+          docker exec dptrb-kafka kafka-console-consumer \
+            --bootstrap-server localhost:9092 \
+            --topic ridership.events.raw \
+            --from-beginning \
+            --max-messages 10 \
+            --timeout-ms 5000 || true
+
+          echo ""
+          echo "===== ROUTING ALERTS ====="
+          docker exec dptrb-kafka kafka-console-consumer \
+            --bootstrap-server localhost:9092 \
+            --topic routing.alerts \
+            --from-beginning \
+            --max-messages 20 \
+            --timeout-ms 5000 || true
+
+          echo ""
+          echo "===== ROUTING RECOMMENDATIONS ====="
+          docker exec dptrb-kafka kafka-console-consumer \
+            --bootstrap-server localhost:9092 \
+            --topic routing.recommendations \
+            --from-beginning \
+            --max-messages 20 \
+            --timeout-ms 5000 || true
+
       - name: Shutdown
         if: always()
         run: |
