@@ -141,7 +141,7 @@ def run(bootstrap_servers: str, station_ids: list[str], events_per_second: float
         raw_payload = {
             "station_id": station_id,
             "turnstile_id": f"{station_id}-TS-{random.randint(1, 6):02d}",
-            "direction": random.choice(["IN", "OUT"]),
+            "direction": "IN",
             "passenger_count": 1,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
