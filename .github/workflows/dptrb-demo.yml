@@ -59,26 +59,44 @@ jobs:
         run: |
           docker compose config
 
-      - name: Build and start DPTRB
+      - name: Build DPTRB images
         run: |
-          docker compose up --build -d
+          docker compose build
 
-      - name: Wait for services
+      - name: Start infrastructure
         run: |
-          sleep 45
+          docker compose up -d zookeeper postgres
+          sleep 30
+
+      - name: Inspect infrastructure
+        run: |
+          docker compose ps
+          docker compose logs --no-color zookeeper --tail=100
+
+      - name: Start Kafka
+        run: |
+          docker compose up -d --no-deps kafka
+          sleep 30
+          docker compose ps
+          docker compose logs --no-color kafka --tail=100
+
+      - name: Start application services
+        run: |
+          docker compose up -d --no-deps routing-engine ingestion-service kafka-ui
+          sleep 30
           docker compose ps
 
       - name: Show routing engine logs
         run: |
-          docker compose logs --no-color routing-engine || true
+          docker compose logs --no-color routing-engine --tail=200 || true
 
       - name: Show ingestion logs
         run: |
-          docker compose logs --no-color ingestion-service || true
+          docker compose logs --no-color ingestion-service --tail=200 || true
 
       - name: Show all service logs
         run: |
-          docker compose logs --no-color --tail=200
+          docker compose logs --no-color --tail=200 || true
 
       - name: Shutdown
         if: always()
