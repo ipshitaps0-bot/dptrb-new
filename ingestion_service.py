@@ -137,7 +137,7 @@ def run(bootstrap_servers: str, station_ids: list[str], events_per_second: float
     )
 
     while producer._running:
-        station_id = random.choice(station_ids)
+        station_id = "STN-001"
         raw_payload = {
             "station_id": station_id,
             "turnstile_id": f"{station_id}-TS-{random.randint(1, 6):02d}",
